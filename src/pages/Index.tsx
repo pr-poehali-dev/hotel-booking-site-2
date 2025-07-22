@@ -3,10 +3,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
   const [language, setLanguage] = useState<'ru' | 'en'>('ru');
+  const [bookingData, setBookingData] = useState({
+    checkIn: '',
+    checkOut: '',
+    guests: 2,
+    name: '',
+    email: '',
+    phone: '',
+    roomType: ''
+  });
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const { toast } = useToast();
 
   const content = {
     ru: {
@@ -41,6 +55,16 @@ const Index = () => {
       reviews: {
         title: 'Отзывы гостей',
         subtitle: 'Что говорят о нас наши гости'
+      },
+      booking: {
+        title: 'Бронирование номера',
+        name: 'Имя',
+        email: 'Email',
+        phone: 'Телефон',
+        roomType: 'Тип номера',
+        confirm: 'Подтвердить бронирование',
+        success: 'Заявка отправлена! Мы свяжемся с вами в ближайшее время.',
+        close: 'Закрыть'
       }
     },
     en: {
@@ -75,6 +99,16 @@ const Index = () => {
       reviews: {
         title: 'Guest Reviews',
         subtitle: 'What our guests say about us'
+      },
+      booking: {
+        title: 'Room Booking',
+        name: 'Name',
+        email: 'Email',
+        phone: 'Phone',
+        roomType: 'Room Type',
+        confirm: 'Confirm Booking',
+        success: 'Booking request sent! We will contact you shortly.',
+        close: 'Close'
       }
     }
   };
@@ -124,6 +158,35 @@ const Index = () => {
       description: language === 'ru' ? 'Трансфер на премиальных автомобилях' : 'Transfer in premium vehicles'
     }
   ];
+
+  const handleBookingSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const bookingInfo = {
+      ...bookingData,
+      timestamp: new Date().toLocaleString('ru-RU'),
+      roomPrice: bookingData.roomType === 'Делюкс' || bookingData.roomType === 'Deluxe' ? '25,000' : 
+                 bookingData.roomType === 'Сюит' || bookingData.roomType === 'Suite' ? '45,000' : '85,000'
+    };
+
+    console.log('Данные для отправки на почту:', bookingInfo);
+    
+    toast({
+      title: language === 'ru' ? "Заявка принята!" : "Booking request received!",
+      description: t.booking.success,
+    });
+    
+    setIsBookingOpen(false);
+    setBookingData({
+      checkIn: '',
+      checkOut: '',
+      guests: 2,
+      name: '',
+      email: '',
+      phone: '',
+      roomType: ''
+    });
+  };
 
   const reviews = [
     {
@@ -195,23 +258,112 @@ const Index = () => {
                   <label className="block text-sm font-medium text-deepBlack mb-2">
                     {t.hero.checkIn}
                   </label>
-                  <Input type="date" className="border-gold/30" />
+                  <Input 
+                    type="date" 
+                    className="border-gold/30"
+                    value={bookingData.checkIn}
+                    onChange={(e) => setBookingData({...bookingData, checkIn: e.target.value})}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-deepBlack mb-2">
                     {t.hero.checkOut}
                   </label>
-                  <Input type="date" className="border-gold/30" />
+                  <Input 
+                    type="date" 
+                    className="border-gold/30"
+                    value={bookingData.checkOut}
+                    onChange={(e) => setBookingData({...bookingData, checkOut: e.target.value})}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-deepBlack mb-2">
                     {t.hero.guests}
                   </label>
-                  <Input type="number" defaultValue="2" min="1" className="border-gold/30" />
+                  <Input 
+                    type="number" 
+                    min="1" 
+                    className="border-gold/30"
+                    value={bookingData.guests}
+                    onChange={(e) => setBookingData({...bookingData, guests: parseInt(e.target.value)})}
+                  />
                 </div>
-                <Button className="bg-gold hover:bg-gold-dark text-deepBlack font-semibold h-10">
-                  {t.hero.book}
-                </Button>
+                <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-gold hover:bg-gold-dark text-deepBlack font-semibold h-10">
+                      {t.hero.book}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="font-cormorant text-2xl text-deepBlack">
+                        {t.booking.title}
+                      </DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleBookingSubmit} className="space-y-4">
+                      <div>
+                        <Label htmlFor="name">{t.booking.name} *</Label>
+                        <Input
+                          id="name"
+                          required
+                          value={bookingData.name}
+                          onChange={(e) => setBookingData({...bookingData, name: e.target.value})}
+                          className="border-gold/30"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="email">{t.booking.email} *</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          required
+                          value={bookingData.email}
+                          onChange={(e) => setBookingData({...bookingData, email: e.target.value})}
+                          className="border-gold/30"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">{t.booking.phone} *</Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          required
+                          value={bookingData.phone}
+                          onChange={(e) => setBookingData({...bookingData, phone: e.target.value})}
+                          className="border-gold/30"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="roomType">{t.booking.roomType} *</Label>
+                        <select
+                          id="roomType"
+                          required
+                          value={bookingData.roomType}
+                          onChange={(e) => setBookingData({...bookingData, roomType: e.target.value})}
+                          className="w-full p-2 border border-gold/30 rounded-md"
+                        >
+                          <option value="">{language === 'ru' ? 'Выберите номер' : 'Choose room'}</option>
+                          <option value={t.rooms.deluxe}>{t.rooms.deluxe}</option>
+                          <option value={t.rooms.suite}>{t.rooms.suite}</option>
+                          <option value={t.rooms.presidential}>{t.rooms.presidential}</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-3">
+                        <Button type="submit" className="flex-1 bg-gold hover:bg-gold-dark text-deepBlack">
+                          {t.booking.confirm}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => setIsBookingOpen(false)}
+                          className="border-gold/30"
+                        >
+                          {t.booking.close}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
             </CardContent>
           </Card>
@@ -257,9 +409,16 @@ const Index = () => {
                       </Badge>
                     ))}
                   </div>
-                  <Button className="w-full bg-gold hover:bg-gold-dark text-deepBlack">
-                    {t.hero.book}
-                  </Button>
+                  <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        className="w-full bg-gold hover:bg-gold-dark text-deepBlack"
+                        onClick={() => setBookingData({...bookingData, roomType: room.title})}
+                      >
+                        {t.hero.book}
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
                 </CardContent>
               </Card>
             ))}
